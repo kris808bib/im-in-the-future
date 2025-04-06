@@ -5,8 +5,8 @@ import requests
 import json
 import io
 import base64
-import os
-import time 
+import time
+import threading
 
 
 class CharacterCreatorApp:
@@ -15,11 +15,12 @@ class CharacterCreatorApp:
         self.root.title("Конструктор будущего инженера")
         self.root.geometry("1200x800")
         
-        # API конфигурация (в реальном приложении храните это безопасно!)
+        # API конфигурация
         self.API_URL = "https://api-key.fusionbrain.ai/"
-        self.API_KEY = "8AF886A5D68CEB8B4263A24D76B3B6A3"  # Замените на реальный ключ
-        self.SECRET_KEY = "DB4FB8D7263008BD65BEB0367F9D0A9E"  # Замените на реальный ключ
+        self.API_KEY = "39F6EF9FEA13248C5770140BEAD5D289"
+        self.SECRET_KEY = "1E036DB31C1430EC35F746FC4BFC52D7"
         self.pipeline_id = None
+        self.cancel_flag = False
         
         # Загрузки изображений для предпросмотра
         self.load_assets()
@@ -76,7 +77,6 @@ class CharacterCreatorApp:
             img = img.resize(size, Image.Resampling.LANCZOS)
             return ImageTk.PhotoImage(img)
         except:
-            # Заглушка если изображение не найдено
             blank = Image.new('RGB', size, color='gray')
             return ImageTk.PhotoImage(blank)
     
@@ -99,7 +99,6 @@ class CharacterCreatorApp:
             return None
         
         try:
-            # Подготовка параметров
             params = {
                 "type": "GENERATE",
                 "numImages": 1,
@@ -120,7 +119,6 @@ class CharacterCreatorApp:
                 'X-Secret': f'Secret {self.SECRET_KEY}',
             }
             
-            # Отправка запроса
             response = requests.post(
                 self.API_URL + 'key/api/v1/pipeline/run',
                 headers=headers,
@@ -128,8 +126,12 @@ class CharacterCreatorApp:
             )
             task_id = response.json()['uuid']
             
-            # Проверка статуса
-            for _ in range(10):
+            # Увеличенное время ожидания (15 проверок по 10 секунд)
+            for _ in range(15):
+                if self.cancel_flag:
+                    self.cancel_flag = False
+                    raise Exception("Генерация отменена")
+                
                 status_response = requests.get(
                     self.API_URL + 'key/api/v1/pipeline/status/' + task_id,
                     headers=headers
@@ -141,15 +143,16 @@ class CharacterCreatorApp:
                 elif status['status'] == 'FAIL':
                     raise Exception("Ошибка генерации изображения")
                 
-                self.root.update()
-                time.sleep(5)
+                time.sleep(10)
             
-            raise Exception("Превышено время ожидания")
+            raise Exception("Превышено время ожидания генерации (150 секунд)")
             
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Ошибка сети: {str(e)}")
+        except KeyError as e:
+            raise Exception(f"Некорректный ответ API: {str(e)}")
         except Exception as e:
-            print(e)
-            messagebox.showerror("Ошибка", f"Ошибка генерации: {str(e)}")
-            return None
+            raise Exception(f"Ошибка генерации: {str(e)}")
     
     def setup_ui(self):
         """Настройка пользовательского интерфейса"""
@@ -158,11 +161,54 @@ class CharacterCreatorApp:
         
         # Левая панель - выбор характеристик
         options_frame = ttk.Frame(main_frame, width=400)
-        options_frame.pack(side=tk.LEFT, fill=tk.Y)
+        options_frame.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
         
         # Правая панель - предпросмотр
         preview_frame = ttk.Frame(main_frame)
-        preview_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        preview_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Контейнер для элементов предпросмотра
+        preview_container = ttk.Frame(preview_frame)
+        preview_container.pack(fill=tk.BOTH, expand=True)
+        
+        # Область предпросмотра
+        self.preview_label = ttk.Label(preview_container, image=self.images["default"])
+        self.preview_label.pack(pady=20)
+        
+        # Прогресс-бар (теперь выше других элементов)
+        self.progress = ttk.Progressbar(
+            preview_container,
+            orient='horizontal',
+            mode='indeterminate',
+            length=400
+        )
+        self.progress.pack(pady=10, before=self.preview_label)  # Размещаем перед preview_label
+        
+        # Кнопка отмены
+        self.cancel_btn = ttk.Button(
+            preview_container,
+            text="Отменить генерацию",
+            command=self.cancel_generation,
+            state=tk.DISABLED
+        )
+        self.cancel_btn.pack(pady=5)
+        
+        # Описание профессии
+        self.profession_desc = tk.StringVar()
+        ttk.Label(
+            preview_container, 
+            textvariable=self.profession_desc,
+            wraplength=400,
+            justify=tk.CENTER
+        ).pack(pady=10)
+        
+        # Кнопка генерации (добавляем ссылку на неё)
+        self.generate_btn = ttk.Button(
+            options_frame, 
+            text="Сгенерировать персонажа", 
+            command=self.start_generation_thread
+        )
+        self.generate_btn.pack(pady=20)
         
         # Настройка характеристик
         self.setup_gender_selection(options_frame)
@@ -170,29 +216,83 @@ class CharacterCreatorApp:
         self.setup_eyes_selection(options_frame)
         self.setup_profession_selection(options_frame)
         
-        # Кнопка генерации
-        ttk.Button(
-            options_frame, 
-            text="Сгенерировать персонажа", 
-            command=self.generate_full_character
-        ).pack(pady=20)
-        
-        # Область предпросмотра
-        self.preview_label = ttk.Label(preview_frame, image=self.images["default"])
-        self.preview_label.pack(pady=20)
-        
-        # Описание профессии
-        self.profession_desc = tk.StringVar()
-        ttk.Label(
-            preview_frame, 
-            textvariable=self.profession_desc,
-            wraplength=400,
-            justify=tk.CENTER
-        ).pack(pady=10)
-        
-        # Обновляем описание
         self.update_profession_description()
     
+    def start_generation_thread(self):
+        """Запуск генерации в отдельном потоке"""
+        self.progress.start(10)  # Запускаем с интервалом обновления 10ms
+        self.cancel_btn.config(state=tk.NORMAL)
+        self.generate_btn.config(state=tk.DISABLED)
+        
+        # Очищаем предыдущее изображение
+        self.preview_label.config(image='')
+        self.preview_label.image = None
+        
+        thread = threading.Thread(target=self._generate_in_thread, daemon=True)
+        thread.start()
+    
+    def _generate_in_thread(self):
+        """Метод для выполнения в отдельном потоке"""
+        try:
+            prompt = self.build_prompt()
+            image_data = self.generate_character_image(prompt)
+            
+            if image_data:
+                self.root.after(0, self.display_generated_image, image_data)
+        
+        except Exception as e:
+            self.root.after(0, messagebox.showerror, "Ошибка", str(e))
+        
+        finally:
+            self.root.after(0, self.progress.stop)
+            self.root.after(0, self.cancel_btn.config, {'state': tk.DISABLED})
+            self.root.after(0, self.generate_btn.config, {'state': tk.NORMAL})
+    
+    def cancel_generation(self):
+        """Отмена генерации"""
+        self.cancel_flag = True
+        self.cancel_btn.config(state=tk.DISABLED)
+    
+    def build_prompt(self):
+        """Сборка промта для генерации"""
+        gender = "мужчина" if self.gender_var.get() == "male" else "женщина"
+        
+        hair_style_map = {
+            "short": "короткие волосы",
+            "long": "длинные волосы"
+        }
+        hair_style = hair_style_map[self.hair_style_var.get()]
+        
+        hair_color_map = {
+            "black": "черные",
+            "blonde": "светлые"
+        }
+        hair_color = hair_color_map[self.hair_color_var.get()]
+        
+        eyes_map = {
+            "round": "круглые глаза",
+            "almond": "миндалевидные глаза"
+        }
+        eyes = eyes_map[self.eyes_var.get()]
+        
+        eyes_color_map = {
+            "brown": "карие",
+            "blue": "голубые"
+        }
+        eyes_color = eyes_color_map[self.eyes_color_var.get()]
+        
+        profession_map = {
+            "control_engineer": "скада система",
+            "robotics_engineer": "современные роботизированные установки",
+            "quality_engineer": "инженер по контролю качества"
+        }
+        profession = profession_map[self.profession_var.get()]
+        
+        return (
+            f"Изображение {gender} до пояса, {hair_style}, {hair_color}, {eyes}, {eyes_color}, "
+            f"на фоне {profession}, реалистичный стиль, высокое качество"
+        )
+
     def setup_gender_selection(self, parent):
         """Выбор пола персонажа"""
         frame = ttk.LabelFrame(parent, text="Пол", padding=10)
@@ -364,72 +464,15 @@ class CharacterCreatorApp:
         """Обновление описания профессии"""
         prof = self.professions[self.profession_var.get()]
         self.profession_desc.set(f"{prof['name']}\n\n{prof['description']}")
-    
-    def generate_full_character(self):
-        """Генерация полного персонажа"""
-        # Собираем промт на основе выбранных параметров
-        gender = "мужчина" if self.gender_var.get() == "male" else "женщина"
-        
-        hair_style_map = {
-            "short": "короткие волосы",
-            "long": "длинные волосы"
-        }
-        hair_style = hair_style_map[self.hair_style_var.get()]
-        
-        hair_color_map = {
-            "black": "черные",
-            "blonde": "светлые"
-        }
-        hair_color = hair_color_map[self.hair_color_var.get()]
-        
-        eyes_map = {
-            "round": "круглые глаза",
-            "almond": "миндалевидные глаза"
-        }
-        eyes = eyes_map[self.eyes_var.get()]
-        
-        eyes_color_map = {
-            "brown": "карие",
-            "blue": "голубые"
-        }
-        eyes_color = eyes_color_map[self.eyes_color_var.get()]
-        
-        profession_map = {
-            "control_engineer": "скада система",
-            "robotics_engineer": "современные роботизированные установки",
-            "quality_engineer": "инженер по контролю качества"
-        }
-        profession = profession_map[self.profession_var.get()]
-        
-        prompt = (
-            f"Изображение {gender} до пояса, {hair_style}, {hair_color}, {eyes}, {eyes_color}, "
-            f"на фоне {profession}, реалистичный стиль, высокое качество"
-        )
-        print(prompt)
-        # Показываем сообщение о генерации
-        self.preview_label.config(text="Генерация изображения...")
-        self.root.update()
-        
-        # Генерируем изображение
-        image_data = self.generate_character_image(prompt)
-        
-        if image_data:
-            self.display_generated_image(image_data)
-    
+
     def display_generated_image(self, image_base64):
         """Отображение сгенерированного изображения"""
         try:
-            # Декодируем base64
             image_data = base64.b64decode(image_base64)
-            
-            # Создаем изображение PIL
             image = Image.open(io.BytesIO(image_data))
-            
-            # Масштабируем для отображения
             image.thumbnail((500, 500))
             photo = ImageTk.PhotoImage(image)
             
-            # Обновляем превью
             self.preview_label.config(image=photo)
             self.preview_label.image = photo
             

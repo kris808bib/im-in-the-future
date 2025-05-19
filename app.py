@@ -15,6 +15,8 @@ class CharacterCreatorApp:
         self.root = root
         self.root.title("Конструктор будущего инженера")
         self.root.geometry("1200x800")
+        self.logo_path = "assets\logo.png"  # Укажите правильный путь
+        self.logo_size = (50, 50) 
         
         # API конфигурация
         self.API_URL = "https://api-key.fusionbrain.ai/"
@@ -154,8 +156,9 @@ class CharacterCreatorApp:
             params = {
                 "type": "GENERATE",
                 "numImages": 1,
-                "width": 512,
-                "height": 512,
+                "style": "ANIME",
+                "width": 1024,
+                "height": 1024,
                 "generateParams": {
                     "query": prompt
                 }
@@ -274,8 +277,37 @@ class CharacterCreatorApp:
         self.setup_eyes_selection(scrollable_frame)
         self.setup_pose_selection(scrollable_frame)
         self.setup_profession_selection(scrollable_frame)
-        self.setup_style_selection(scrollable_frame)
-    
+        # self.setup_style_selection(scrollable_frame)
+        # ====== СТИЛИЗАЦИЯ В СТИЛЕ МИЭТа ======
+        self.root.configure(bg="#FFFFFF")
+        style.theme_use("clam")
+
+        style.configure("TFrame", background="#FFFFFF")
+        style.configure("TLabel", background="#FFFFFF", font=("Helvetica", 11))
+        style.configure("TLabelframe", background="#FFFFFF", borderwidth=2, relief="groove")
+        style.configure("TLabelframe.Label", background="#FFFFFF", foreground="#0F45C7", font=("Helvetica", 12, "bold"))
+        style.configure("TRadiobutton", background="#FFFFFF", font=("Helvetica", 10), foreground="#000000")
+        style.map("TRadiobutton", foreground=[("active", "#0F45C7")])
+
+        # Кнопка генерации (оранжевый МИЭТ)
+        style.configure("Accent.TButton",
+                        background="#F04D23",
+                        foreground="#FFFFFF",
+                        font=("Helvetica", 12, "bold"),
+                        padding=10,
+                        relief="flat")
+        style.map("Accent.TButton",
+                background=[("active", "#d9441e")],
+                relief=[("pressed", "groove")])
+
+        # Прогресс-бар (оранжевый индикатор на белом фоне)
+        style.configure("TProgressbar",
+                        background="#F04D23",
+                        troughcolor="#FFFFFF",
+                        bordercolor="#FFFFFF",
+                        lightcolor="#F04D23",
+                        darkcolor="#F04D23")
+            
     def setup_gender_selection(self, parent):
         """Выбор пола персонажа"""
         frame = ttk.LabelFrame(parent, text="Пол", padding=10)
@@ -498,26 +530,26 @@ class CharacterCreatorApp:
                 value=key
             ).pack(anchor=tk.W, pady=2)
     
-    def setup_style_selection(self, parent):
-        """Выбор стиля рисования"""
-        frame = ttk.LabelFrame(parent, text="Стиль рисования", padding=10)
-        frame.pack(fill=tk.X, pady=5)
+    # def setup_style_selection(self, parent):
+    #     """Выбор стиля рисования"""
+    #     frame = ttk.LabelFrame(parent, text="Стиль рисования", padding=10)
+    #     frame.pack(fill=tk.X, pady=5)
         
-        self.style_var = tk.StringVar(value="realistic")
+    #     self.style_var = tk.StringVar(value="realistic")
         
-        styles = [
-            ("Реалистичный", "realistic"),
-            ("Аниме", "anime"),
-            ("3D", "3d")
-        ]
+    #     styles = [
+    #         ("Реалистичный", "realistic"),
+    #         ("Аниме", "anime"),
+    #         ("3D", "3d")
+    #     ]
         
-        for text, value in styles:
-            ttk.Radiobutton(
-                frame,
-                text=text,
-                variable=self.style_var,
-                value=value
-            ).pack(anchor=tk.W, pady=2)
+    #     for text, value in styles:
+    #         ttk.Radiobutton(
+    #             frame,
+    #             text=text,
+    #             variable=self.style_var,
+    #             value=value
+    #         ).pack(anchor=tk.W, pady=2)
     
     def start_generation_thread(self):
         """Запуск генерации в отдельном потоке"""
@@ -596,25 +628,63 @@ class CharacterCreatorApp:
         }
         pose = pose_map[self.pose_var.get()]
         
-        style_map = {
-            "realistic": "реалистичный стиль",
-            "anime": "аниме стиль",
-            "3d": "3D стиль"
-        }
-        style = style_map[self.style_var.get()]
+        # style_map = {
+        #     "realistic": "реалистичный стиль",
+        #     "anime": "аниме стиль",
+        #     "3d": "3D стиль"
+        # }
+        # style = style_map[self.style_var.get()]
         
         return (
             f"Изображение {gender} {pose}, {skin_color}, {hair_style}, {hair_color} волосы, {eyes}, {eyes_color} глаза, "
-            f" {profession_bg}, изображение в стиле {style},реалистично, высокое качество, детализированное изображение, "
+            f" {profession_bg}, изображение в стиле аниме,реалистично, высокое качество, детализированное изображение, "
             f"хорошо виден фон, Человек смотрит в камеру"
         )
     
+    # def display_generated_image(self, image_base64):
+    #     """Отображение сгенерированного изображения"""
+    #     try:
+    #         image_data = base64.b64decode(image_base64)
+    #         image = Image.open(io.BytesIO(image_data))
+    #         image.thumbnail((500, 500))
+    #         photo = ImageTk.PhotoImage(image)
+            
+    #         self.preview_label.config(image=photo, text="")
+    #         self.preview_label.image = photo
+            
+    #     except Exception as e:
+    #         messagebox.showerror("Ошибка", f"Не удалось отобразить изображение: {str(e)}")
+    #         self.preview_label.config(image=self.default_preview, text="Ошибка загрузки изображения")
+
     def display_generated_image(self, image_base64):
         """Отображение сгенерированного изображения"""
         try:
             image_data = base64.b64decode(image_base64)
             image = Image.open(io.BytesIO(image_data))
+            
+            # Применяем thumbnail
             image.thumbnail((500, 500))
+            
+            # Наложение логотипа
+            try:
+                logo = Image.open(self.logo_path).convert("RGBA")
+                logo = logo.resize(self.logo_size)
+                
+                # Рассчитываем позицию
+                position = (
+                    image.width - logo.width - 10,  # 10px отступ
+                    image.height - logo.height - 10
+                )
+                
+                # Создаем копию изображения для редактирования
+                image = image.convert("RGBA")
+                image.paste(logo, position, logo)
+                image = image.convert("RGB")  # Конвертируем обратно для совместимости
+                
+            except Exception as logo_error:
+                print(f"Ошибка логотипа: {logo_error}")
+
+            # Создаем PhotoImage
             photo = ImageTk.PhotoImage(image)
             
             self.preview_label.config(image=photo, text="")

@@ -156,8 +156,9 @@ class CharacterCreatorApp:
             params = {
                 "type": "GENERATE",
                 "numImages": 1,
-                "width": 512,
-                "height": 512,
+                "style": "ANIME",
+                "width": 1024,
+                "height": 1024,
                 "generateParams": {
                     "query": prompt
                 }

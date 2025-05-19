@@ -277,7 +277,36 @@ class CharacterCreatorApp:
         self.setup_pose_selection(scrollable_frame)
         self.setup_profession_selection(scrollable_frame)
         # self.setup_style_selection(scrollable_frame)
-    
+        # ====== СТИЛИЗАЦИЯ В СТИЛЕ МИЭТа ======
+        self.root.configure(bg="#FFFFFF")
+        style.theme_use("clam")
+
+        style.configure("TFrame", background="#FFFFFF")
+        style.configure("TLabel", background="#FFFFFF", font=("Helvetica", 11))
+        style.configure("TLabelframe", background="#FFFFFF", borderwidth=2, relief="groove")
+        style.configure("TLabelframe.Label", background="#FFFFFF", foreground="#0F45C7", font=("Helvetica", 12, "bold"))
+        style.configure("TRadiobutton", background="#FFFFFF", font=("Helvetica", 10), foreground="#000000")
+        style.map("TRadiobutton", foreground=[("active", "#0F45C7")])
+
+        # Кнопка генерации (оранжевый МИЭТ)
+        style.configure("Accent.TButton",
+                        background="#F04D23",
+                        foreground="#FFFFFF",
+                        font=("Helvetica", 12, "bold"),
+                        padding=10,
+                        relief="flat")
+        style.map("Accent.TButton",
+                background=[("active", "#d9441e")],
+                relief=[("pressed", "groove")])
+
+        # Прогресс-бар (оранжевый индикатор на белом фоне)
+        style.configure("TProgressbar",
+                        background="#F04D23",
+                        troughcolor="#FFFFFF",
+                        bordercolor="#FFFFFF",
+                        lightcolor="#F04D23",
+                        darkcolor="#F04D23")
+            
     def setup_gender_selection(self, parent):
         """Выбор пола персонажа"""
         frame = ttk.LabelFrame(parent, text="Пол", padding=10)

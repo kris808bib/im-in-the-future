@@ -5,10 +5,14 @@ import io
 import base64
 import threading
 import os
+import tempfile
+import win32api
+import win32print
 from config import API_CONFIG, PROFESSIONS, COLOR_PALETTE
 from character_model import CharacterModel
 from api_handler import ApiHandler
 from utils import ImageUtils
+
 
 
 class CharacterCreatorApp:
@@ -31,6 +35,7 @@ class CharacterCreatorApp:
             "pose": tk.StringVar(value=self.model.current_character["pose"]),
             "profession": tk.StringVar(value=self.model.current_character["profession"])
         }
+        self.current_image = None  # Добавляем атрибут для хранения текущего изображения
         
         # Привязка всех переменных к обработчику
         for param, var in self.ui_vars.items():
@@ -40,6 +45,7 @@ class CharacterCreatorApp:
         self.load_images()
         self.setup_styles()
         self.setup_ui()
+        
 
         
 
@@ -64,7 +70,7 @@ class CharacterCreatorApp:
             "almond": ImageUtils.load_image("assets/eyes_almond.png", (80, 30))
         }
         
-        self.default_preview = ImageUtils.create_sample_image("default", (400, 400), "#EEEEEE")
+        self.default_preview = ImageUtils.load_image("assets/logo.png", (400, 400))
 
     def setup_styles(self):
         """Настройка стилей интерфейса"""
@@ -191,12 +197,21 @@ class CharacterCreatorApp:
         self.preview_label = ttk.Label(
             right_frame,
             image=self.default_preview,
-            text="Здесь будет изображение",
+            # text="Здесь будет изображение",
             compound="center",
             font=("Helvetica", 14),
             anchor='center'
         )
         self.preview_label.pack(pady=20, fill=tk.BOTH, expand=True)
+
+        self.print_btn = ttk.Button(
+            right_frame,
+            text="Печать",
+            command=self.print_image,
+            state=tk.DISABLED,
+            style='Accent.TButton'
+        )
+        self.print_btn.pack(pady=10, side=tk.BOTTOM)
 
     # Методы настройки элементов управления
         
@@ -392,6 +407,7 @@ class CharacterCreatorApp:
             prompt = self.model.build_prompt()
             image_data = self.api.generate_image(prompt)
             self.display_generated_image(image_data)
+            self.preview_label.config(text="")
         except Exception as e:
             self.root.after(0, messagebox.showerror, "Ошибка", str(e))
         finally:
@@ -415,7 +431,44 @@ class CharacterCreatorApp:
             photo = ImageTk.PhotoImage(image.convert("RGB"))
             self.preview_label.config(image=photo)
             self.preview_label.image = photo
+            self.current_image = image  # Сохраняем изображение
+            self.print_btn.config(state=tk.NORMAL)
             
         except Exception as e:
             self.preview_label.config(image=self.default_preview, text="Ошибка загрузки")
             messagebox.showerror("Ошибка", f"Не удалось отобразить изображение: {str(e)}")
+
+    def print_image(self):
+        """Печать изображения на принтере по умолчанию"""
+        if not self.current_image:
+            messagebox.showerror("Ошибка", "Нет изображения для печати")
+            return
+
+        try:
+            # Создаем временный файл
+            with tempfile.NamedTemporaryFile(suffix=".bmp", delete=False) as tmp:
+                self.current_image.save(tmp.name, "BMP")
+                
+                # Получаем дескриптор принтера по умолчанию
+                printer_name = win32print.GetDefaultPrinter()
+                hprinter = win32print.OpenPrinter(printer_name)
+                
+                try:
+                    # Начинаем задание на печать
+                    win32print.StartDocPrinter(hprinter, 1, ("Python Print", None, "RAW"))
+                    win32print.StartPagePrinter(hprinter)
+                    
+                    # Отправляем данные на печать
+                    with open(tmp.name, "rb") as f:
+                        data = f.read()
+                    win32api.ShellExecute(0, "print", tmp.name, None, ".", 0)
+                    
+                    # Завершаем печать
+                    win32print.EndPagePrinter(hprinter)
+                    win32print.EndDocPrinter(hprinter)
+                    
+                finally:
+                    win32print.ClosePrinter(hprinter)
+                
+        except Exception as e:
+            messagebox.showerror("Ошибка печати", f"Не удалось распечатать изображение:\n{str(e)}")

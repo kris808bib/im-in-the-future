@@ -15,7 +15,7 @@ class CharacterCreatorApp:
         self.root = root
         self.root.title("Конструктор будущего инженера")
         self.root.geometry("1200x800")
-        self.logo_path = "assets\logo.png"  # Укажите правильный путь
+        self.logo_path = "assets\\logo.png"  
         self.logo_size = (50, 50) 
         
         # API конфигурация
@@ -179,8 +179,11 @@ class CharacterCreatorApp:
                 headers=headers,
                 files=data
             )
+
+            # task_id = response.json()['uuid']
+            print(response)
             task_id = response.json()['uuid']
-            
+            print(task_id)
             for _ in range(15):
                 if self.cancel_flag:
                     self.cancel_flag = False

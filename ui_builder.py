@@ -45,6 +45,11 @@ class CharacterCreatorApp:
         self.load_images()
         self.setup_styles()
         self.setup_ui()
+        self.root.geometry("{0}x{1}+0+0".format(
+            self.root.winfo_screenwidth(), 
+            self.root.winfo_screenheight()
+        ))
+        self.root.state('zoomed')  # Развернуть на весь экран
         
 
         
@@ -57,15 +62,40 @@ class CharacterCreatorApp:
 
     def load_images(self):
         """Загрузка изображений для элементов интерфейса"""
+        # self.hair_images = {
+        #     "side_part": ImageUtils.load_image("assets/hair_short.png", (100, 100)),
+        #     "bob": ImageUtils.load_image("assets/hair_bob.png", (100, 100)),
+        #     "medium": ImageUtils.load_image("assets/hair_medium.png", (100, 100)),
+        #     "long_curly": ImageUtils.load_image("assets/hair_long_curly.png", (100, 100)),
+        #     "long_straight": ImageUtils.load_image("assets/hair_long_straight.png", (100, 100))
+        # }
         self.hair_images = {
-            "side_part": ImageUtils.load_image("assets/hair_short.png", (100, 100)),
-            "bob": ImageUtils.load_image("assets/hair_bob.png", (100, 100)),
-            "medium": ImageUtils.load_image("assets/hair_medium.png", (100, 100)),
-            "long_curly": ImageUtils.load_image("assets/hair_long_curly.png", (100, 100)),
-            "long_straight": ImageUtils.load_image("assets/hair_long_straight.png", (100, 100))
+            "side_part": ImageUtils.load_image("assets/hair_short.png", (80, 80)),
+            "bob": ImageUtils.load_image("assets/hair_bob.png", (80, 80)),
+            "supershort_men's_hair": ImageUtils.load_image("assets/supershort_men's_hair.png", (80, 80)),
+            "smalllong_men's_hair": ImageUtils.load_image("assets/smalllong_men's_hair.png", (80, 80)),
+            "men's_braids": ImageUtils.load_image("assets/men's_braids.png", (80, 80)),
+            "bald": ImageUtils.load_image("assets/bald.png", (80, 80)),
+            "medium": ImageUtils.load_image("assets/hair_medium.png", (80, 80)),
+            "long_curly": ImageUtils.load_image("assets/hair_long_curly.png", (80, 80)),
+            "long_straight": ImageUtils.load_image("assets/hair_long_straight.png", (80, 80)),
+            "afro": ImageUtils.load_image("assets/afro.png", (80, 80)),
+            "braids": ImageUtils.load_image("assets/braids.png", (80, 80)),
+            "two_tail": ImageUtils.load_image("assets/two_tail.png", (80, 80)),
+            "long_tail": ImageUtils.load_image("assets/long_tail.png", (80, 80)),
+            "fringe": ImageUtils.load_image("assets/fringe.png", (80, 80)),
+            "bunch": ImageUtils.load_image("assets/bunch.png", (80, 80)),
+            "piksi": ImageUtils.load_image("assets/pixie.png", (80, 80)),
+
         }
+
         
         self.eyes_images = {
+            "round": ImageUtils.load_image("assets/eyes_round.png", (80, 40)),
+            "almond": ImageUtils.load_image("assets/eyes_almond.png", (80, 30))
+        }
+
+        self.accessories = {
             "round": ImageUtils.load_image("assets/eyes_round.png", (80, 40)),
             "almond": ImageUtils.load_image("assets/eyes_almond.png", (80, 30))
         }
@@ -106,29 +136,112 @@ class CharacterCreatorApp:
         main_frame = ttk.Frame(self.root)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Левая панель с настройками
-        self.setup_left_panel(main_frame)
+        # Левая панель с настройками (40% ширины)
+        left_container = ttk.Frame(main_frame, width=int(self.root.winfo_screenwidth()*0.6))
+        left_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
+        self.setup_left_panel(left_container)
         
-        # Правая панель с превью
-        self.setup_right_panel(main_frame)
+        # Правая панель с превью (60% ширины)
+        right_container = ttk.Frame(main_frame)
+        right_container.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        self.setup_right_panel(right_container)
 
+    # def setup_left_panel(self, parent):
+    #     """Панель параметров с прокруткой"""
+    #     container = ttk.Frame(parent)
+    #     container.pack(fill=tk.BOTH, expand=True)
+        
+    #     canvas = tk.Canvas(container)
+    #     scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+    #     scroll_frame = ttk.Frame(canvas)
+        
+    #     scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+    #     canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+    #     canvas.configure(yscrollcommand=scrollbar.set)
+        
+    #     canvas.pack(side="left", fill="both", expand=True)
+    #     scrollbar.pack(side="right", fill="y")
+        
+    #     # Элементы управления
+    #     self.setup_gender_selection(scroll_frame)
+    #     self.setup_skin_color_selection(scroll_frame)
+    #     self.setup_hair_selection(scroll_frame)
+    #     self.setup_eyes_selection(scroll_frame)
+    #     self.setup_pose_selection(scroll_frame)
+    #     self.setup_profession_selection(scroll_frame)
+
+    #     # ====== СТИЛИЗАЦИЯ В СТИЛЕ МИЭТа ======
+    #     self.root.configure(bg="#FFFFFF")
+    #     # Настройка стиля
+    #     style = ttk.Style()
+    #     style.configure('Accent.TButton', font=('Lab Grotesque', 12, 'bold'))
+        
+    #     style.theme_use("clam")
+
+    #     style.configure("TFrame", background="#FFFFFF")
+    #     style.configure("TLabel", background="#FFFFFF", font=("Lab Grotesque", 11))
+    #     style.configure("TLabelframe", background="#FFFFFF", borderwidth=2, relief="groove")
+    #     style.configure("TLabelframe.Label", background="#FFFFFF", foreground="#0F45C7", font=("Helvetica", 12, "bold"))
+    #     style.configure("TRadiobutton", background="#FFFFFF", font=("Lab Grotesque", 10), foreground="#000000")
+    #     style.map("TRadiobutton", foreground=[("active", "#0F45C7")])
+
+    #     # Кнопка генерации (оранжевый МИЭТ)
+    #     style.configure("Accent.TButton",
+    #                     background="#0f45c7",
+    #                     foreground="#FFFFFF",
+    #                     font=("Lab Grotesque", 12, "bold"),
+    #                     padding=10,
+    #                     relief="flat")
+    #     style.map("Accent.TButton",
+    #             background=[("active", "#F04D23")],
+    #             relief=[("pressed", "groove")])
+
+    #     # Прогресс-бар (оранжевый индикатор на белом фоне)
+    #     style.configure("TProgressbar",
+    #                     background="#F04D23",
+    #                     troughcolor="#FFFFFF",
+    #                     bordercolor="#FFFFFF",
+    #                     lightcolor="#F04D23",
+    #                     darkcolor="#F04D23")
     def setup_left_panel(self, parent):
         """Панель параметров с прокруткой"""
+        # Основной контейнер с прокруткой
         container = ttk.Frame(parent)
-        container.pack(side=tk.LEFT, fill=tk.Y, padx=10)
+        container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        canvas = tk.Canvas(container)
+        # Создаем Canvas и Scrollbar
+        canvas = tk.Canvas(container, highlightthickness=0)
         scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        
+        # Фрейм для содержимого внутри Canvas
         scroll_frame = ttk.Frame(canvas)
         
-        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        # Привязка прокрутки
+        scroll_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all"),
+                width=e.width  # Фиксируем ширину равной содержимому
+            )
+        )
+        
+        # Создаем окно для содержимого
         canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
         
+        # Упаковка элементов
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        # Элементы управления
+        # Обработчик колеса мыши
+        def on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        
+        # Привязка событий мыши
+        canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", on_mousewheel))
+        canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
+        
+        # Добавляем элементы управления
         self.setup_gender_selection(scroll_frame)
         self.setup_skin_color_selection(scroll_frame)
         self.setup_hair_selection(scroll_frame)
@@ -136,7 +249,6 @@ class CharacterCreatorApp:
         self.setup_pose_selection(scroll_frame)
         self.setup_profession_selection(scroll_frame)
 
-        # ====== СТИЛИЗАЦИЯ В СТИЛЕ МИЭТа ======
         self.root.configure(bg="#FFFFFF")
         # Настройка стиля
         style = ttk.Style()
@@ -213,7 +325,6 @@ class CharacterCreatorApp:
         )
         self.print_btn.pack(pady=10, side=tk.BOTTOM)
 
-    # Методы настройки элементов управления
         
     def setup_gender_selection(self, parent):
         frame = ttk.LabelFrame(parent, text="Пол", padding=10)
@@ -256,49 +367,114 @@ class CharacterCreatorApp:
                 value=color_name
             ).pack()
 
+    # def setup_hair_selection(self, parent):
+    #     # Выбор стиля прически
+    #     frame = ttk.LabelFrame(parent, text="Прическа", padding=10)
+    #     frame.pack(fill=tk.X, pady=5)
+        
+    #     hair_grid = ttk.Frame(frame)
+    #     hair_grid.pack()
+        
+    #     # Мужские прически
+    #     male_frame = ttk.Frame(hair_grid)
+    #     male_frame.pack(side=tk.LEFT, padx=10)
+    #     ttk.Label(male_frame, text="Мужские", font=('Helvetica', 10, 'bold')).pack()
+        
+    #     for style in ["side_part", "bob"]:
+    #         ttk.Radiobutton(
+    #             male_frame,
+    #             image=self.hair_images[style],
+    #             variable=self.ui_vars["hair_style"],
+    #             value=style
+    #         ).pack(pady=5)
+        
+    #     # Женские прически
+    #     female_frame = ttk.Frame(hair_grid)
+    #     female_frame.pack(side=tk.LEFT, padx=10)
+    #     ttk.Label(female_frame, text="Женские", font=('Helvetica', 10, 'bold')).pack()
+        
+    #     for style in ["medium", "long_curly", "long_straight"]:
+    #         ttk.Radiobutton(
+    #             female_frame,
+    #             image=self.hair_images[style],
+    #             variable=self.ui_vars["hair_style"],
+    #             value=style
+    #         ).pack(pady=5)
+        
+    #     # Выбор цвета волос
+    #     frame = ttk.LabelFrame(parent, text="Цвет волос", padding=10)
+    #     frame.pack(fill=tk.X, pady=5)
+        
+    #     color_frame = ttk.Frame(frame)
+    #     color_frame.pack()
+        
+    #     for color_name in COLOR_PALETTE["hair_colors"]:
+    #         btn_frame = ttk.Frame(color_frame)
+    #         btn_frame.pack(side=tk.LEFT, padx=5)
+            
+    #         color_img = ImageUtils.create_color_circle(
+    #             COLOR_PALETTE["hair_colors"][color_name], 
+    #             30
+    #         )
+    #         ttk.Label(btn_frame, image=color_img).pack()
+    #         ttk.Radiobutton(
+    #             btn_frame,
+    #             text=color_name.capitalize(),
+    #             variable=self.ui_vars["hair_color"],
+    #             value=color_name
+    #         ).pack()
     def setup_hair_selection(self, parent):
         # Выбор стиля прически
         frame = ttk.LabelFrame(parent, text="Прическа", padding=10)
         frame.pack(fill=tk.X, pady=5)
         
+        # Создаем фрейм для сетки причесок
         hair_grid = ttk.Frame(frame)
         hair_grid.pack()
         
-        # Мужские прически
-        male_frame = ttk.Frame(hair_grid)
-        male_frame.pack(side=tk.LEFT, padx=10)
-        ttk.Label(male_frame, text="Мужские", font=('Helvetica', 10, 'bold')).pack()
+        # Все доступные прически
+        all_hair_styles = [
+            "side_part", "bob", "supershort_men's_hair",
+            "smalllong_men's_hair", "men's_braids", "bald",
+            "medium", "long_curly", "long_straight", "afro",
+            "braids", "two_tail", "long_tail", "fringe", "bunch", "piksi"
+        ]
         
-        for style in ["side_part", "bob"]:
-            ttk.Radiobutton(
-                male_frame,
-                image=self.hair_images[style],
+        # Отображаем прически в сетке 4 колонки
+        for i, style in enumerate(all_hair_styles):
+            if i % 4 == 0:  # Новая строка после каждых 4 причесок
+                row_frame = ttk.Frame(hair_grid)
+                row_frame.pack(fill=tk.X)
+            
+            hair_container = ttk.Frame(row_frame, padding=5)
+            hair_container.pack(side=tk.LEFT, padx=5)
+            
+            # Изображение прически
+            ttk.Label(
+                hair_container, 
+                image=self.hair_images[style]
+            ).pack()
+            
+            # Название прически
+            tk.Radiobutton(
+                hair_container,
+                text=style.replace("_", " ").replace("'s", "").capitalize(),
                 variable=self.ui_vars["hair_style"],
-                value=style
-            ).pack(pady=5)
-        
-        # Женские прически
-        female_frame = ttk.Frame(hair_grid)
-        female_frame.pack(side=tk.LEFT, padx=10)
-        ttk.Label(female_frame, text="Женские", font=('Helvetica', 10, 'bold')).pack()
-        
-        for style in ["medium", "long_curly", "long_straight"]:
-            ttk.Radiobutton(
-                female_frame,
-                image=self.hair_images[style],
-                variable=self.ui_vars["hair_style"],
-                value=style
-            ).pack(pady=5)
+                value=style,
+                wraplength=100,
+                background="white",
+                font=("Helvetica", 9)
+            ).pack()
         
         # Выбор цвета волос
-        frame = ttk.LabelFrame(parent, text="Цвет волос", padding=10)
-        frame.pack(fill=tk.X, pady=5)
+        color_frame = ttk.LabelFrame(parent, text="Цвет волос", padding=10)
+        color_frame.pack(fill=tk.X, pady=5)
         
-        color_frame = ttk.Frame(frame)
-        color_frame.pack()
+        color_grid = ttk.Frame(color_frame)
+        color_grid.pack()
         
         for color_name in COLOR_PALETTE["hair_colors"]:
-            btn_frame = ttk.Frame(color_frame)
+            btn_frame = ttk.Frame(color_grid)
             btn_frame.pack(side=tk.LEFT, padx=5)
             
             color_img = ImageUtils.create_color_circle(
@@ -312,7 +488,8 @@ class CharacterCreatorApp:
                 variable=self.ui_vars["hair_color"],
                 value=color_name
             ).pack()
-    
+        
+
     def setup_eyes_selection(self, parent):
         """Выбор формы и цвета глаз"""
         # Форма глаз

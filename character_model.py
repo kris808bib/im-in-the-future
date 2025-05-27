@@ -1,5 +1,6 @@
 from config import PROFESSIONS, COLOR_PALETTE
 
+
 class CharacterModel:
     def __init__(self):
         self.current_character = {
@@ -10,9 +11,10 @@ class CharacterModel:
             "eyes_color": "blue",
             "skin_color": "light",
             "pose": "half",
-            "profession": "control_engineer"
+            "profession": "control_engineer",
+            "accessories": "basic_glasses"
         }
-        
+
         self.professions = PROFESSIONS
         self.color_palette = COLOR_PALETTE
 
@@ -26,15 +28,27 @@ class CharacterModel:
             "bob": "мужская стрижка боб",
             "medium": "средняя длина волос по плечи",
             "long_curly": "длинные кудрявые волосы",
-            "long_straight": "длинные прямые волосы"
+            "long_straight": "длинные прямые волосы",
+            "afro": "пышные афроволосы",
+            "smalllong_men's_hair": "удлиненная мужская стрижка",
+            "supershort_men's_hair": "очень короткая стрижка под машинку",
+            "braids": "волосы заплетены в две косы",
+            "two_tail": "волосы собраны в два хвоста",
+            "long_tail": "Высокий длинный хвост",
+            "men's_braids": "африканские косички",
+            "fringe": "стижка с челкой",
+            "bunch": "пучок, собранный на голове",
+            "piksi": "стрижка пикси",
+            "bald": "лысый без волос, волосы отсутсвуют, видна блестящая кожа головы"
         }
+
         profession_bg = self.professions[self.current_character["profession"]]["background"]
-        
+
         return (
             f"Изображение {gender}, {self._get_skin_color()}, "
             f"{hair_style_map[self.current_character['hair_style']]}, "
-            f"{self._get_hair_color()} волосы, {self._get_eyes()}, "
-            f"{profession_bg}, стоит на фоне лаборатории, он счастив, стиль аниме, высокое качество"
+            f"{self._get_hair_color()}, {self._get_eyes()}, на руках по пять пальцев, "
+            f"{profession_bg}, стоит на фоне лаборатории, он счастлив, стиль аниме, высокое качество, хорошая детализация"
         )
 
     def _get_skin_color(self):
@@ -57,3 +71,21 @@ class CharacterModel:
             "round": "круглые глаза",
             "almond": "узкие глаза"
         }[self.current_character["eyes"]]
+
+    def _get_accessories(self):
+        return {
+            "oval_glasses": "овальные очки",
+            "basic_glasses": "очки",
+            "circle_glasses": "круглые очки",
+            "rect_glasses": "прямоугольные очки",
+            "small_headphones": "проводные наушники",
+            "big_headphones": "большие накладные наушники",
+            "sports_headband": "спортивная повязка на голову",
+            "cap": "кепка",
+            "bonnet": "шляпа",
+            "hat": "шапка",
+            "beret": "берет",
+            "beard": "борода",
+            "moutstache": "усы"
+			
+        }[self.current_character["accessories"]]

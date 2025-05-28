@@ -33,13 +33,20 @@ class CharacterCreatorApp:
             "eyes_color": tk.StringVar(value=self.model.current_character["eyes_color"]),
             "skin_color": tk.StringVar(value=self.model.current_character["skin_color"]),
             "pose": tk.StringVar(value=self.model.current_character["pose"]),
-            "profession": tk.StringVar(value=self.model.current_character["profession"])
+            "profession": tk.StringVar(value=self.model.current_character["profession"]),
+            "accessories_glasses": tk.StringVar(value=self.model.current_character["accessories"]["glasses"]),
+            "accessories_headwear": tk.StringVar(value=self.model.current_character["accessories"]["headwear"]),
+            "accessories_facial": tk.StringVar(value=self.model.current_character["accessories"]["facial"])
         }
         self.current_image = None  # Добавляем атрибут для хранения текущего изображения
         
         # Привязка всех переменных к обработчику
         for param, var in self.ui_vars.items():
-            var.trace_add("write", lambda *args, p=param: self.update_parameter(p))
+            if param.startswith("accessories_"):
+                category = param.split("_")[1]
+                var.trace_add("write", lambda *args, c=category: self.update_accessory(c))
+            else:
+                var.trace_add("write", lambda *args, p=param: self.update_parameter(p))
         
         # Загрузка ресурсов
         self.load_images()
@@ -51,7 +58,9 @@ class CharacterCreatorApp:
         ))
         self.root.state('zoomed')  # Развернуть на весь экран
         
-
+    def update_accessory(self, category):
+        value = self.ui_vars[f"accessories_{category}"].get()
+        self.model.update_accessory(category, value)
         
 
     def update_parameter(self, parameter: str):
@@ -76,16 +85,16 @@ class CharacterCreatorApp:
             "smalllong_men's_hair": ImageUtils.load_image("assets/smalllong_men's_hair.png", (80, 80)),
             "men's_braids": ImageUtils.load_image("assets/men's_braids.png", (80, 80)),
             "bald": ImageUtils.load_image("assets/bald.png", (80, 80)),
-            "medium": ImageUtils.load_image("assets/hair_medium.png", (80, 80)),
+            "medium": ImageUtils.load_image("assets/hair_medium.png", (60, 80)),
             "long_curly": ImageUtils.load_image("assets/hair_long_curly.png", (80, 80)),
             "long_straight": ImageUtils.load_image("assets/hair_long_straight.png", (80, 80)),
             "afro": ImageUtils.load_image("assets/afro.png", (80, 80)),
-            "braids": ImageUtils.load_image("assets/braids.png", (80, 80)),
+            "braids": ImageUtils.load_image("assets/braids.png", (80, 90)),
             "two_tail": ImageUtils.load_image("assets/two_tail.png", (80, 80)),
             "long_tail": ImageUtils.load_image("assets/long_tail.png", (80, 80)),
-            "fringe": ImageUtils.load_image("assets/fringe.png", (80, 80)),
+            # "fringe": ImageUtils.load_image("assets/fringe.png", (80, 80)),
             "bunch": ImageUtils.load_image("assets/bunch.png", (80, 80)),
-            "piksi": ImageUtils.load_image("assets/pixie.png", (80, 80)),
+            "piksi": ImageUtils.load_image("assets/piksi.png", (80, 80)),
 
         }
 
@@ -95,9 +104,18 @@ class CharacterCreatorApp:
             "almond": ImageUtils.load_image("assets/eyes_almond.png", (80, 30))
         }
 
-        self.accessories = {
-            "round": ImageUtils.load_image("assets/eyes_round.png", (80, 40)),
-            "almond": ImageUtils.load_image("assets/eyes_almond.png", (80, 30))
+        self.accessories_images = {
+            "oval_glasses": ImageUtils.load_image("assets/oval_glasses.png", (80, 80)),
+            "basic_glasses": ImageUtils.load_image("assets/basic_glasses.png", (80, 80)),
+            "circle_glasses": ImageUtils.load_image("assets/circle_glasses.png", (80, 80)),
+            "rect_glasses": ImageUtils.load_image("assets/rect_glasses.png", (80, 80)),
+            "cap": ImageUtils.load_image("assets/cap.png", (80, 80)),
+            "bonnet": ImageUtils.load_image("assets/bonnet.png", (80, 80)),
+            "hat": ImageUtils.load_image("assets/hat.png", (80, 80)),
+            "beret": ImageUtils.load_image("assets/beret.png", (80, 80)),
+            "beard": ImageUtils.load_image("assets/beard.png", (80, 80)),
+            "moustache": ImageUtils.load_image("assets/moutstache.png", (80, 80)),
+            "sport":ImageUtils.load_image("assets/sports_headband.png", (80, 80)),
         }
         
         self.default_preview = ImageUtils.load_image("assets/logo.png", (400, 400))
@@ -146,63 +164,6 @@ class CharacterCreatorApp:
         right_container.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         self.setup_right_panel(right_container)
 
-    # def setup_left_panel(self, parent):
-    #     """Панель параметров с прокруткой"""
-    #     container = ttk.Frame(parent)
-    #     container.pack(fill=tk.BOTH, expand=True)
-        
-    #     canvas = tk.Canvas(container)
-    #     scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
-    #     scroll_frame = ttk.Frame(canvas)
-        
-    #     scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-    #     canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
-    #     canvas.configure(yscrollcommand=scrollbar.set)
-        
-    #     canvas.pack(side="left", fill="both", expand=True)
-    #     scrollbar.pack(side="right", fill="y")
-        
-    #     # Элементы управления
-    #     self.setup_gender_selection(scroll_frame)
-    #     self.setup_skin_color_selection(scroll_frame)
-    #     self.setup_hair_selection(scroll_frame)
-    #     self.setup_eyes_selection(scroll_frame)
-    #     self.setup_pose_selection(scroll_frame)
-    #     self.setup_profession_selection(scroll_frame)
-
-    #     # ====== СТИЛИЗАЦИЯ В СТИЛЕ МИЭТа ======
-    #     self.root.configure(bg="#FFFFFF")
-    #     # Настройка стиля
-    #     style = ttk.Style()
-    #     style.configure('Accent.TButton', font=('Lab Grotesque', 12, 'bold'))
-        
-    #     style.theme_use("clam")
-
-    #     style.configure("TFrame", background="#FFFFFF")
-    #     style.configure("TLabel", background="#FFFFFF", font=("Lab Grotesque", 11))
-    #     style.configure("TLabelframe", background="#FFFFFF", borderwidth=2, relief="groove")
-    #     style.configure("TLabelframe.Label", background="#FFFFFF", foreground="#0F45C7", font=("Helvetica", 12, "bold"))
-    #     style.configure("TRadiobutton", background="#FFFFFF", font=("Lab Grotesque", 10), foreground="#000000")
-    #     style.map("TRadiobutton", foreground=[("active", "#0F45C7")])
-
-    #     # Кнопка генерации (оранжевый МИЭТ)
-    #     style.configure("Accent.TButton",
-    #                     background="#0f45c7",
-    #                     foreground="#FFFFFF",
-    #                     font=("Lab Grotesque", 12, "bold"),
-    #                     padding=10,
-    #                     relief="flat")
-    #     style.map("Accent.TButton",
-    #             background=[("active", "#F04D23")],
-    #             relief=[("pressed", "groove")])
-
-    #     # Прогресс-бар (оранжевый индикатор на белом фоне)
-    #     style.configure("TProgressbar",
-    #                     background="#F04D23",
-    #                     troughcolor="#FFFFFF",
-    #                     bordercolor="#FFFFFF",
-    #                     lightcolor="#F04D23",
-    #                     darkcolor="#F04D23")
     def setup_left_panel(self, parent):
         """Панель параметров с прокруткой"""
         # Основной контейнер с прокруткой
@@ -246,6 +207,7 @@ class CharacterCreatorApp:
         self.setup_skin_color_selection(scroll_frame)
         self.setup_hair_selection(scroll_frame)
         self.setup_eyes_selection(scroll_frame)
+        self.setup_accessories_selection(scroll_frame) 
         self.setup_pose_selection(scroll_frame)
         self.setup_profession_selection(scroll_frame)
 
@@ -344,6 +306,28 @@ class CharacterCreatorApp:
             value="female"
         ).pack(side=tk.LEFT, padx=20)
 
+    # def setup_skin_color_selection(self, parent):
+    #     frame = ttk.LabelFrame(parent, text="Цвет кожи", padding=10)
+    #     frame.pack(fill=tk.X, pady=5)
+        
+    #     color_frame = ttk.Frame(frame)
+    #     color_frame.pack()
+        
+    #     for color_name in COLOR_PALETTE["skin_colors"]:
+    #         btn_frame = ttk.Frame(color_frame)
+    #         btn_frame.pack(side=tk.LEFT, padx=5)
+            
+    #         color_img = ImageUtils.create_color_circle(
+    #             COLOR_PALETTE["skin_colors"][color_name], 
+    #             40
+    #         )
+    #         ttk.Label(btn_frame, image=color_img).pack()
+    #         ttk.Radiobutton(
+    #             btn_frame,
+    #             text=color_name.capitalize(),
+    #             variable=self.ui_vars["skin_color"],
+    #             value=color_name
+    #         ).pack()
     def setup_skin_color_selection(self, parent):
         frame = ttk.LabelFrame(parent, text="Цвет кожи", padding=10)
         frame.pack(fill=tk.X, pady=5)
@@ -355,17 +339,22 @@ class CharacterCreatorApp:
             btn_frame = ttk.Frame(color_frame)
             btn_frame.pack(side=tk.LEFT, padx=5)
             
+            # Создаем цветной кружок
             color_img = ImageUtils.create_color_circle(
                 COLOR_PALETTE["skin_colors"][color_name], 
                 40
             )
-            ttk.Label(btn_frame, image=color_img).pack()
+            
+            # Упаковываем только кружок без текста
             ttk.Radiobutton(
                 btn_frame,
-                text=color_name.capitalize(),
+                image=color_img,
                 variable=self.ui_vars["skin_color"],
                 value=color_name
             ).pack()
+            
+            # Сохраняем ссылку на изображение
+            btn_frame.image = color_img
 
     # def setup_hair_selection(self, parent):
     #     # Выбор стиля прически
@@ -437,7 +426,8 @@ class CharacterCreatorApp:
             "side_part", "bob", "supershort_men's_hair",
             "smalllong_men's_hair", "men's_braids", "bald",
             "medium", "long_curly", "long_straight", "afro",
-            "braids", "two_tail", "long_tail", "fringe", "bunch", "piksi"
+            "braids", "two_tail", "long_tail", #"fringe", 
+            "bunch", "piksi"
         ]
         
         # Отображаем прически в сетке 4 колонки
@@ -477,22 +467,72 @@ class CharacterCreatorApp:
             btn_frame = ttk.Frame(color_grid)
             btn_frame.pack(side=tk.LEFT, padx=5)
             
+            # Создаем цветной кружок
             color_img = ImageUtils.create_color_circle(
                 COLOR_PALETTE["hair_colors"][color_name], 
                 30
             )
-            ttk.Label(btn_frame, image=color_img).pack()
+            
+            # Упаковываем только кружок без текста
             ttk.Radiobutton(
                 btn_frame,
-                text=color_name.capitalize(),
+                image=color_img,
                 variable=self.ui_vars["hair_color"],
                 value=color_name
             ).pack()
+            
+            # Сохраняем ссылку на изображение
+            btn_frame.image = color_img
         
 
+    # def setup_eyes_selection(self, parent):
+    #     """Выбор формы и цвета глаз"""
+    #     # Форма глаз
+    #     frame = ttk.LabelFrame(parent, text="Форма глаз", padding=10)
+    #     frame.pack(fill=tk.X, pady=5)
+        
+    #     eyes_frame = ttk.Frame(frame)
+    #     eyes_frame.pack()
+        
+    #     ttk.Radiobutton(
+    #         eyes_frame,
+    #         image=self.eyes_images["round"],
+    #         variable=self.ui_vars["eyes"],
+    #         value="round"
+    #     ).pack(side=tk.LEFT, padx=20)
+        
+    #     ttk.Radiobutton(
+    #         eyes_frame,
+    #         image=self.eyes_images["almond"],
+    #         variable=self.ui_vars["eyes"],
+    #         value="almond"
+    #     ).pack(side=tk.LEFT, padx=20)
+        
+    #     # Цвет глаз
+    #     frame = ttk.LabelFrame(parent, text="Цвет глаз", padding=10)
+    #     frame.pack(fill=tk.X, pady=5)
+        
+    #     color_frame = ttk.Frame(frame)
+    #     color_frame.pack()
+        
+    #     for color_name in COLOR_PALETTE["eye_colors"]:
+    #         btn_frame = ttk.Frame(color_frame)
+    #         btn_frame.pack(side=tk.LEFT, padx=5)
+            
+    #         color_img = ImageUtils.create_color_circle(
+    #             COLOR_PALETTE["eye_colors"][color_name], 
+    #             30
+    #         )
+    #         ttk.Label(btn_frame, image=color_img).pack()
+    #         ttk.Radiobutton(
+    #             btn_frame,
+    #             text=color_name.capitalize(),
+    #             variable=self.ui_vars["eyes_color"],
+    #             value=color_name
+    #         ).pack()
     def setup_eyes_selection(self, parent):
         """Выбор формы и цвета глаз"""
-        # Форма глаз
+        # Форма глаз (оставляем как было)
         frame = ttk.LabelFrame(parent, text="Форма глаз", padding=10)
         frame.pack(fill=tk.X, pady=5)
         
@@ -513,7 +553,7 @@ class CharacterCreatorApp:
             value="almond"
         ).pack(side=tk.LEFT, padx=20)
         
-        # Цвет глаз
+        # Цвет глаз (обновляем для кружков)
         frame = ttk.LabelFrame(parent, text="Цвет глаз", padding=10)
         frame.pack(fill=tk.X, pady=5)
         
@@ -524,16 +564,80 @@ class CharacterCreatorApp:
             btn_frame = ttk.Frame(color_frame)
             btn_frame.pack(side=tk.LEFT, padx=5)
             
+            # Создаем цветной кружок
             color_img = ImageUtils.create_color_circle(
                 COLOR_PALETTE["eye_colors"][color_name], 
                 30
             )
-            ttk.Label(btn_frame, image=color_img).pack()
+            
+            # Упаковываем только кружок без текста
             ttk.Radiobutton(
                 btn_frame,
-                text=color_name.capitalize(),
+                image=color_img,
                 variable=self.ui_vars["eyes_color"],
                 value=color_name
+            ).pack()
+            
+            # Сохраняем ссылку на изображение
+            btn_frame.image = color_img
+    def setup_accessories_selection(self, parent):
+        """Выбор аксессуаров по категориям"""
+        frame = ttk.LabelFrame(parent, text="Аксессуары", padding=10)
+        frame.pack(fill=tk.X, pady=5)
+        
+        notebook = ttk.Notebook(frame)
+        notebook.pack(fill=tk.BOTH, expand=True)
+        
+        # Вкладка для очков
+        glasses_frame = ttk.Frame(notebook)
+        notebook.add(glasses_frame, text="Очки")
+        self._setup_accessory_category(glasses_frame, "glasses")
+        
+        # Вкладка для головных уборов
+        headwear_frame = ttk.Frame(notebook)
+        notebook.add(headwear_frame, text="Головные уборы")
+        self._setup_accessory_category(headwear_frame, "headwear")
+        
+        # Вкладка для лицевых аксессуаров
+        facial_frame = ttk.Frame(notebook)
+        notebook.add(facial_frame, text="Лицевые")
+        self._setup_accessory_category(facial_frame, "facial")
+
+    def _setup_accessory_category(self, parent, category):
+        """Настройка выбора для одной категории аксессуаров"""
+        category_names = {
+            "glasses": "Очки",
+            "headwear": "Головной убор",
+            "facial": "Лицевые"
+        }
+        
+        frame = ttk.LabelFrame(parent, text=category_names[category], padding=5)
+        frame.pack(fill=tk.X, pady=5)
+        
+        grid_frame = ttk.Frame(frame)
+        grid_frame.pack(fill=tk.X)
+        
+        row_frame = None
+        for i, accessory in enumerate(self.model.accessories_categories[category]):
+            if i % 4 == 0:
+                row_frame = ttk.Frame(grid_frame)
+                row_frame.pack(fill=tk.X)
+            
+            container = ttk.Frame(row_frame, padding=5)
+            container.pack(side=tk.LEFT)
+            
+            if accessory != "none":
+                ttk.Label(
+                    container,
+                    image=self.accessories_images[accessory]
+                ).pack()
+            
+            text = "Нет" if accessory == "none" else self.model._get_accessory_name(accessory)
+            ttk.Radiobutton(
+                container,
+                text=text,
+                variable=self.ui_vars[f"accessories_{category}"],
+                value=accessory
             ).pack()
 
     def setup_pose_selection(self, parent):

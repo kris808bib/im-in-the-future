@@ -30,7 +30,7 @@ COLOR_PALETTE = {
         "blonde": "#F5E6C4",
         "light_brown": "#B57A4F",
         "brown": "#5A3825",
-        "red": "#A53A2E"
+        "red": "#d76031"
     },
     "eye_colors": {
         "blue": "#87CEEB",

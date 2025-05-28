@@ -23,6 +23,7 @@ class ImageUtils:
     def create_color_circle(color, size=30):
         img = Image.new('RGB', (size, size), color='white')
         draw = ImageDraw.Draw(img)
+        draw.ellipse((0, 0, size-1, size-1), fill="black")
         draw.ellipse((2, 2, size-2, size-2), fill=color)
         return ImageTk.PhotoImage(img)
 
